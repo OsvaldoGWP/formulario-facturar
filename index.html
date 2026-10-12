@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datos de Facturación - ARCA</title>
+    <!-- SDK de Telegram Web App -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #ffffff);
+            --text-color: var(--tg-theme-text-color, #000000);
+            --hint-color: var(--tg-theme-hint-color, #999999);
+            --button-color: var(--tg-theme-button-color, #3390ec);
+            --button-text-color: var(--tg-theme-button-text-color, #ffffff);
+            --secondary-bg-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            --error-color: #ff3b30;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            color: var(--hint-color);
+            margin-bottom: 6px;
+        }
+
+        .required-mark {
+            color: var(--error-color);
+            margin-left: 4px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid var(--hint-color);
+            border-radius: 8px;
+            background-color: var(--secondary-bg-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--button-color);
+        }
+
+        input:disabled, select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .btn-submit {
+            background-color: var(--button-color);
+            color: var(--button-text-color);
+            border: none;
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Datos para facturar</h2>
+        <form id="facturaForm">
+            
+            <!-- Condición frente al IVA -->
+            <div class="form-group">
+                <label for="condicionIva">Condición frente al IVA <span class="required-mark">*</span></label>
+                <select id="condicionIva" required>
+                    <option value="" disabled selected>Seleccioná una opción</option>
+                    <option value="CF">Consumidor Final</option>
+                    <option value="RI">Responsable Inscripto</option>
+                    <option value="RM">Monotributo</option>
+                    <option value="EX">Exento</option>
+                </select>
+            </div>
+
+            <!-- Tipo de Documento -->
+            <div class="form-group">
+                <label for="tipoDoc">Tipo de Documento <span class="required-mark">*</span></label>
+                <select id="tipoDoc" required>
+                    <option value="" disabled selected>Seleccioná una condición primero</option>
+                </select>
+            </div>
+
+            <!-- Número de Documento -->
+            <div class="form-group">
+                <label for="nroDoc">Número <span class="required-mark">*</span></label>
+                <input type="text" id="nroDoc" placeholder="Seleccioná una condición primero" required disabled>
+                <div id="errorDoc" class="error-message">Formato de documento inválido.</div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btnSubmit" disabled>Enviar Datos</button>
+        </form>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const condicionIvaSelect = document.getElementById('condicionIva');
+        const tipoDocSelect = document.getElementById('tipoDoc');
+        const nroDocInput = document.getElementById('nroDoc');
+        const errorDocDiv = document.getElementById('errorDoc');
+        const btnSubmit = document.getElementById('btnSubmit');
+        const facturaForm = document.getElementById('facturaForm');
+
+        function validarDocumento() {
+            const condicion = condicionIvaSelect.value;
+            const tipoDoc = tipoDocSelect.value;
+            const valor = nroDocInput.value.trim();
+
+            if (!condicion || !tipoDoc) return false;
+
+            if (condicion === 'CF' && tipoDoc === 'SIN_DOC') {
+                return true;
+            }
+
+            if (tipoDoc === 'DNI') {
+                return /^\d{7,8}$/.test(valor);
+            } else if (tipoDoc === 'CUIT') {
+                return /^\d{11}$/.test(valor);
+            }
+            return false;
+        }
+
+        function actualizarEstadoBoton() {
+            const esValido = validarDocumento();
+            btnSubmit.disabled = !esValido;
+        }
+
+        // Actualizar opciones de tipo de documento según la Condición de IVA
+        condicionIvaSelect.addEventListener('change', function() {
+            const condicion = this.value;
+
+            tipoDocSelect.innerHTML = '';
+            nroDocInput.value = '';
+            nroDocInput.disabled = false;
+            errorDocDiv.style.display = 'none';
+
+            if (condicion === 'CF') {
+                const opciones = [
+                    { value: '', text: 'Seleccioná un tipo', disabled: true, selected: true },
+                    { value: 'DNI', text: 'DNI' },
+                    { value: 'CUIT', text: 'CUIT' },
+                    { value: 'SIN_DOC', text: 'Sin Documento' }
+                ];
+                opciones.forEach(opt => {
+                    const el = document.createElement('option');
+                    el.value = opt.value;
+                    el.textContent = opt.text;
+                    if (opt.disabled) el.disabled = true;
+                    if (opt.selected) el.selected = true;
+                    tipoDocSelect.appendChild(el);
+                });
+                tipoDocSelect.disabled = false;
+                nroDocInput.placeholder = 'Seleccioná un tipo de documento';
+                nroDocInput.disabled = true;
+            } else {
+                // Para Empresas / Inscriptos (RI, RM, EX) -> Bloqueado en CUIT
+                const el = document.createElement('option');
+                el.value = 'CUIT';
+                el.textContent = 'CUIT';
+                tipoDocSelect.appendChild(el);
+                tipoDocSelect.disabled = true;
+                
+                nroDocInput.disabled = false;
+                nroDocInput.placeholder = 'Ej: 20304050607 (11 dígitos)';
+            }
+            actualizarEstadoBoton();
+        });
+
+        // Dinámica al cambiar el Tipo de Documento
+        tipoDocSelect.addEventListener('change', function() {
+            errorDocDiv.style.display = 'none';
+            nroDocInput.value = '';
+
+            if (this.value === 'SIN_DOC') {
+                nroDocInput.value = '0';
+                nroDocInput.disabled = true;
+            } else if (this.value === 'DNI') {
+                nroDocInput.disabled = false;
+                nroDocInput.placeholder = 'Ej: 35123456 (7 u 8 dígitos)';
+            } else if (this.value === 'CUIT') {
+                nroDocInput.disabled = false;
+                nroDocInput.placeholder = 'Ej: 20304050607 (11 dígitos)';
+            }
+            actualizarEstadoBoton();
+        });
+
+        // Limpieza de caracteres no numéricos y validación en tiempo real
+        nroDocInput.addEventListener('input', function() {
+            if (tipoDocSelect.value === 'SIN_DOC') return;
+            this.value = this.value.replace(/[^0-9]/g, '');
+
+            // Mostrar/ocultar mensaje de error sutil mientras escribe
+            if (this.value.length > 0) {
+                if (!validarDocumento()) {
+                    errorDocDiv.style.display = 'block';
+                } else {
+                    errorDocDiv.style.display = 'none';
+                }
+            } else {
+                errorDocDiv.style.display = 'none';
+            }
+
+            actualizarEstadoBoton();
+        });
+
+        facturaForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!validarDocumento()) {
+                errorDocDiv.style.display = 'block';
+                nroDocInput.focus();
+                return;
+            }
+            errorDocDiv.style.display = 'none';
+
+            const formData = {
+                condicion_iva: condicionIvaSelect.value,
+                tipo_doc: tipoDocSelect.value,
+                nro_doc: tipoDocSelect.value === 'SIN_DOC' ? '0' : nroDocInput.value.trim(),
+                chat_id: tg.initDataUnsafe?.user?.id || null
+            };
+
+            // Enviar datos de vuelta al Bot de Telegram
+            tg.sendData(JSON.stringify(formData));
+        });
+    </script>
+</body>
+</html>
