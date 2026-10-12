@@ -2,106 +2,315 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Datos de Facturación - ARCA</title>
     <!-- SDK de Telegram Web App -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-color: var(--tg-theme-bg-color, #ffffff);
-            --text-color: var(--tg-theme-text-color, #000000);
-            --hint-color: var(--tg-theme-hint-color, #999999);
-            --button-color: var(--tg-theme-button-color, #3390ec);
+            --bg-color: var(--tg-theme-bg-color, #f4f5f7);
+            --text-color: var(--tg-theme-text-color, #1c1c1e);
+            --hint-color: var(--tg-theme-hint-color, #8e8e93);
+            --button-color: var(--tg-theme-button-color, #007aff);
             --button-text-color: var(--tg-theme-button-text-color, #ffffff);
-            --secondary-bg-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            --secondary-bg-color: var(--tg-theme-secondary-bg-color, #ffffff);
+            --border-color: rgba(60, 60, 67, 0.12);
             --error-color: #ff3b30;
+            --success-color: #34c759; /* Verde para el botón de envío */
+            --success-color-hover: #2cb04d;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            box-sizing: border-box;
         }
 
         .container {
-            max-width: 400px;
+            max-width: 420px;
             margin: 0 auto;
             width: 100%;
-            flex: 1;
         }
 
-        h2 {
-            font-size: 20px;
-            margin-bottom: 20px;
+        /* Encabezado */
+        .app-header {
             text-align: center;
-        }
-
-        .form-group {
             margin-bottom: 16px;
         }
 
-        label {
-            display: block;
-            font-size: 14px;
+        .app-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        /* Títulos de Sección con Iconos */
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: var(--hint-color);
+            margin: 20px 0 8px 4px;
+        }
+
+        .section-title svg {
+            color: var(--hint-color);
+        }
+
+        /* Tarjeta Contenedora */
+        .card {
+            background-color: var(--secondary-bg-color);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-color);
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-color);
             margin-bottom: 6px;
         }
 
         .required-mark {
             color: var(--error-color);
-            margin-left: 4px;
+            margin-left: 3px;
         }
 
         input, select {
             width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border: 1px solid var(--hint-color);
-            border-radius: 8px;
-            background-color: var(--secondary-bg-color);
+            height: 46px;
+            padding: 0 14px;
+            font-size: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background-color: var(--bg-color);
             color: var(--text-color);
-            box-sizing: border-box;
+            transition: all 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml;utf8,<svg fill='%238e8e93' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 36px;
         }
 
         input:focus, select:focus {
             outline: none;
             border-color: var(--button-color);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
         }
 
         input:disabled, select:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
         .error-message {
             color: var(--error-color);
             font-size: 12px;
-            margin-top: 4px;
+            margin-top: 5px;
+            padding-left: 4px;
             display: none;
+            font-weight: 500;
         }
 
-        .btn-submit {
+        /* Selector táctil estilo Píldoras / Grid para IVA */
+        .grid-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .option-pill {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 10px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .option-pill.selected {
             background-color: var(--button-color);
             color: var(--button-text-color);
+            border-color: var(--button-color);
+            box-shadow: 0 4px 10px rgba(0, 122, 255, 0.25);
+        }
+
+        /* Fila de ítem */
+        .item-card {
+            background-color: var(--secondary-bg-color);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .item-badge {
+            background-color: rgba(0, 122, 255, 0.1);
+            color: var(--button-color);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: var(--error-color);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+
+        .btn-remove:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .item-row {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 10px;
+        }
+
+        .subtotal-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-color);
+            font-size: 13px;
+            color: var(--hint-color);
+        }
+
+        .subtotal-amount {
+            font-weight: 700;
+            color: var(--text-color);
+            font-size: 14px;
+        }
+
+        /* Botón Agregar */
+        .btn-add {
+            background-color: transparent;
+            color: var(--button-color);
+            border: 1.5px dashed var(--button-color);
+            border-radius: 14px;
+            width: 100%;
+            height: 46px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 20px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-add:active {
+            background-color: rgba(0, 122, 255, 0.08);
+        }
+
+        /* Resumen Total */
+        .total-card {
+            background: linear-gradient(135deg, var(--button-color), #0056b3);
+            color: #ffffff;
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            box-shadow: 0 6px 16px rgba(0, 122, 255, 0.25);
+        }
+
+        .total-title {
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        .total-amount {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        /* Botón Enviar (Verde Destacado) */
+        .btn-submit {
+            background-color: var(--success-color);
+            color: #ffffff;
             border: none;
             width: 100%;
-            padding: 14px;
+            height: 52px;
             font-size: 16px;
-            font-weight: bold;
-            border-radius: 8px;
+            font-weight: 700;
+            border-radius: 14px;
             cursor: pointer;
-            margin-top: 20px;
-            transition: opacity 0.2s ease;
+            box-shadow: 0 4px 14px rgba(52, 199, 89, 0.35);
+            transition: all 0.2s ease;
+            margin-bottom: 24px;
+        }
+
+        .btn-submit:active {
+            transform: scale(0.98);
+            background-color: var(--success-color-hover);
         }
 
         .btn-submit:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
+            box-shadow: none;
+            transform: none;
             cursor: not-allowed;
         }
     </style>
@@ -109,36 +318,68 @@
 <body>
 
     <div class="container">
-        <h2>Datos para facturar</h2>
+        
+        <div class="app-header">
+            <h2>Datos de Facturación</h2>
+        </div>
+
         <form id="facturaForm">
             
-            <!-- Condición frente al IVA -->
-            <div class="form-group">
-                <label for="condicionIva">Condición frente al IVA <span class="required-mark">*</span></label>
-                <select id="condicionIva" required>
-                    <option value="" disabled selected>Seleccioná una opción</option>
-                    <option value="CF">Consumidor Final</option>
-                    <option value="RI">Responsable Inscripto</option>
-                    <option value="RM">Monotributo</option>
-                    <option value="EX">Exento</option>
-                </select>
+            <!-- SECCIÓN CLIENTE CON ICONO -->
+            <div class="section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Cliente
+            </div>
+            
+            <div class="card">
+                <!-- Selector IVA con Píldoras Táctiles -->
+                <div class="form-group">
+                    <label>Condición frente al IVA <span class="required-mark">*</span></label>
+                    <div class="grid-options" id="ivaGrid">
+                        <div class="option-pill" data-value="CF">Consumidor Final</div>
+                        <div class="option-pill" data-value="RI">Responsable Inscripto</div>
+                        <div class="option-pill" data-value="RM">Monotributo</div>
+                        <div class="option-pill" data-value="EX">Exento</div>
+                    </div>
+                    <input type="hidden" id="condicionIva" required>
+                </div>
+
+                <!-- Tipo de Documento -->
+                <div class="form-group">
+                    <label for="tipoDoc">Tipo de Documento <span class="required-mark">*</span></label>
+                    <select id="tipoDoc" required disabled>
+                        <option value="" disabled selected>Seleccioná una condición primero</option>
+                    </select>
+                </div>
+
+                <!-- Número de Documento -->
+                <div class="form-group">
+                    <label for="nroDoc">Número <span class="required-mark">*</span></label>
+                    <input type="text" id="nroDoc" placeholder="Seleccioná una condición primero" required disabled>
+                    <div id="errorDoc" class="error-message">Formato de documento inválido.</div>
+                </div>
             </div>
 
-            <!-- Tipo de Documento -->
-            <div class="form-group">
-                <label for="tipoDoc">Tipo de Documento <span class="required-mark">*</span></label>
-                <select id="tipoDoc" required>
-                    <option value="" disabled selected>Seleccioná una condición primero</option>
-                </select>
+            <!-- SECCIÓN ÍTEMS CON ICONO -->
+            <div class="section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Detalle de Factura
+            </div>
+            
+            <div id="itemsContainer"></div>
+
+            <button type="button" class="btn-add" id="btnAddItem">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Agregar otro ítem
+            </button>
+
+            <!-- Card con Resumen Total -->
+            <div class="total-card">
+                <span class="total-title">Total a Facturar</span>
+                <span class="total-amount" id="totalFactura">$ 0,00</span>
             </div>
 
-            <!-- Número de Documento -->
-            <div class="form-group">
-                <label for="nroDoc">Número <span class="required-mark">*</span></label>
-                <input type="text" id="nroDoc" placeholder="Seleccioná una condición primero" required disabled>
-                <div id="errorDoc" class="error-message">Formato de documento inválido.</div>
-            </div>
-
+            <!-- Botón Enviar Verde -->
             <button type="submit" class="btn-submit" id="btnSubmit" disabled>Enviar Datos</button>
         </form>
     </div>
@@ -147,41 +388,42 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const condicionIvaSelect = document.getElementById('condicionIva');
+        const ivaGrid = document.getElementById('ivaGrid');
+        const condicionIvaInput = document.getElementById('condicionIva');
         const tipoDocSelect = document.getElementById('tipoDoc');
         const nroDocInput = document.getElementById('nroDoc');
         const errorDocDiv = document.getElementById('errorDoc');
         const btnSubmit = document.getElementById('btnSubmit');
         const facturaForm = document.getElementById('facturaForm');
+        const itemsContainer = document.getElementById('itemsContainer');
+        const btnAddItem = document.getElementById('btnAddItem');
+        const totalFacturaLabel = document.getElementById('totalFactura');
 
-        function validarDocumento() {
-            const condicion = condicionIvaSelect.value;
-            const tipoDoc = tipoDocSelect.value;
-            const valor = nroDocInput.value.trim();
+        let itemCount = 0;
 
-            if (!condicion || !tipoDoc) return false;
-
-            if (condicion === 'CF' && tipoDoc === 'SIN_DOC') {
-                return true;
-            }
-
-            if (tipoDoc === 'DNI') {
-                return /^\d{7,8}$/.test(valor);
-            } else if (tipoDoc === 'CUIT') {
-                return /^\d{11}$/.test(valor);
-            }
-            return false;
+        function formatearMoneda(monto) {
+            return new Intl.NumberFormat('es-AR', {
+                style: 'currency',
+                currency: 'ARS',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            }).format(monto || 0);
         }
 
-        function actualizarEstadoBoton() {
-            const esValido = validarDocumento();
-            btnSubmit.disabled = !esValido;
-        }
+        // Selección Táctil de Condición Frente al IVA
+        ivaGrid.querySelectorAll('.option-pill').forEach(pill => {
+            pill.addEventListener('click', function() {
+                ivaGrid.querySelectorAll('.option-pill').forEach(p => p.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                const val = this.dataset.value;
+                condicionIvaInput.value = val;
+                
+                actualizarOpcionesTipoDoc(val);
+            });
+        });
 
-        // Actualizar opciones de tipo de documento según la Condición de IVA
-        condicionIvaSelect.addEventListener('change', function() {
-            const condicion = this.value;
-
+        function actualizarOpcionesTipoDoc(condicion) {
             tipoDocSelect.innerHTML = '';
             nroDocInput.value = '';
             nroDocInput.disabled = false;
@@ -206,20 +448,17 @@
                 nroDocInput.placeholder = 'Seleccioná un tipo de documento';
                 nroDocInput.disabled = true;
             } else {
-                // Para Empresas / Inscriptos (RI, RM, EX) -> Bloqueado en CUIT
                 const el = document.createElement('option');
                 el.value = 'CUIT';
                 el.textContent = 'CUIT';
                 tipoDocSelect.appendChild(el);
                 tipoDocSelect.disabled = true;
-                
                 nroDocInput.disabled = false;
                 nroDocInput.placeholder = 'Ej: 20304050607 (11 dígitos)';
             }
             actualizarEstadoBoton();
-        });
+        }
 
-        // Dinámica al cambiar el Tipo de Documento
         tipoDocSelect.addEventListener('change', function() {
             errorDocDiv.style.display = 'none';
             nroDocInput.value = '';
@@ -237,45 +476,173 @@
             actualizarEstadoBoton();
         });
 
-        // Limpieza de caracteres no numéricos y validación en tiempo real
         nroDocInput.addEventListener('input', function() {
             if (tipoDocSelect.value === 'SIN_DOC') return;
             this.value = this.value.replace(/[^0-9]/g, '');
 
-            // Mostrar/ocultar mensaje de error sutil mientras escribe
-            if (this.value.length > 0) {
-                if (!validarDocumento()) {
-                    errorDocDiv.style.display = 'block';
-                } else {
-                    errorDocDiv.style.display = 'none';
-                }
+            if (this.value.length > 0 && !validarDocumento()) {
+                errorDocDiv.style.display = 'block';
             } else {
                 errorDocDiv.style.display = 'none';
             }
-
             actualizarEstadoBoton();
         });
+
+        function validarDocumento() {
+            const condicion = condicionIvaInput.value;
+            const tipoDoc = tipoDocSelect.value;
+            const valor = nroDocInput.value.trim();
+
+            if (!condicion || !tipoDoc) return false;
+
+            if (condicion === 'CF' && tipoDoc === 'SIN_DOC') return true;
+            if (tipoDoc === 'DNI') return /^\d{7,8}$/.test(valor);
+            if (tipoDoc === 'CUIT') return /^\d{11}$/.test(valor);
+
+            return false;
+        }
+
+        function calcularTotales() {
+            const itemCards = itemsContainer.querySelectorAll('.item-card');
+            let totalGeneral = 0;
+            let itemsValidos = itemCards.length > 0;
+
+            itemCards.forEach(card => {
+                const desc = card.querySelector('.item-desc').value.trim();
+                const cant = parseInt(card.querySelector('.item-cant').value) || 0;
+                const precioRaw = parseFloat(card.querySelector('.item-precio').dataset.rawValue || 0);
+
+                const subtotal = cant * precioRaw;
+                card.querySelector('.item-subtotal').textContent = formatearMoneda(subtotal);
+
+                totalGeneral += subtotal;
+
+                if (!desc || cant < 1 || cant > 20 || precioRaw <= 0 || precioRaw > 100000) {
+                    itemsValidos = false;
+                }
+            });
+
+            totalFacturaLabel.textContent = formatearMoneda(totalGeneral);
+            return itemsValidos;
+        }
+
+        function actualizarEstadoBoton() {
+            const esDocValido = validarDocumento();
+            const sonItemsValidos = calcularTotales();
+            btnSubmit.disabled = !(esDocValido && sonItemsValidos);
+        }
+
+        function agregarItem() {
+            itemCount++;
+            const card = document.createElement('div');
+            card.className = 'item-card';
+
+            card.innerHTML = `
+                <div class="item-header">
+                    <span class="item-badge">Ítem #${itemCount}</span>
+                    <button type="button" class="btn-remove" onclick="eliminarItem(this)">Eliminar</button>
+                </div>
+                <div class="form-group">
+                    <label>Descripción <span class="required-mark">*</span></label>
+                    <input type="text" class="item-desc" placeholder="Ej: Servicio de consultoría" required oninput="actualizarEstadoBoton()">
+                </div>
+                <div class="item-row">
+                    <div class="form-group">
+                        <label>Cantidad <span class="required-mark">*</span></label>
+                        <input type="number" class="item-cant" min="1" max="20" value="1" required oninput="validarCantidad(this)">
+                    </div>
+                    <div class="form-group">
+                        <label>Precio Unitario <span class="required-mark">*</span></label>
+                        <input type="text" class="item-precio" placeholder="$ 0,00" required oninput="formatearPrecio(this)">
+                    </div>
+                </div>
+                <div class="subtotal-container">
+                    <span>Subtotal</span>
+                    <span class="item-subtotal subtotal-amount">$ 0,00</span>
+                </div>
+            `;
+
+            itemsContainer.appendChild(card);
+            actualizarBotonesEliminar();
+            actualizarEstadoBoton();
+        }
+
+        function eliminarItem(button) {
+            const card = button.closest('.item-card');
+            card.remove();
+            actualizarBotonesEliminar();
+            actualizarEstadoBoton();
+        }
+
+        function actualizarBotonesEliminar() {
+            const cards = itemsContainer.querySelectorAll('.item-card');
+            cards.forEach(card => {
+                const btn = card.querySelector('.btn-remove');
+                btn.disabled = cards.length === 1;
+            });
+        }
+
+        function validarCantidad(input) {
+            let val = parseInt(input.value);
+            if (val > 20) input.value = 20;
+            if (val < 1 && input.value !== '') input.value = 1;
+            actualizarEstadoBoton();
+        }
+
+        function formatearPrecio(input) {
+            let val = input.value.replace(/[^0-9]/g, '');
+            if (val === '') {
+                input.dataset.rawValue = '';
+                input.value = '';
+                actualizarEstadoBoton();
+                return;
+            }
+
+            let num = parseFloat(val);
+            if (num > 100000) {
+                num = 100000;
+            }
+
+            input.dataset.rawValue = num;
+            input.value = formatearMoneda(num);
+
+            actualizarEstadoBoton();
+        }
+
+        btnAddItem.addEventListener('click', agregarItem);
 
         facturaForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            if (!validarDocumento()) {
-                errorDocDiv.style.display = 'block';
-                nroDocInput.focus();
-                return;
-            }
-            errorDocDiv.style.display = 'none';
+            if (!validarDocumento() || !calcularTotales()) return;
+
+            const items = [];
+            itemsContainer.querySelectorAll('.item-card').forEach(card => {
+                const cant = parseInt(card.querySelector('.item-cant').value);
+                const precio = parseFloat(card.querySelector('.item-precio').dataset.rawValue);
+                items.push({
+                    descripcion: card.querySelector('.item-desc').value.trim(),
+                    cantidad: cant,
+                    precio_unitario: precio,
+                    subtotal: cant * precio
+                });
+            });
 
             const formData = {
-                condicion_iva: condicionIvaSelect.value,
+                condicion_iva: condicionIvaInput.value,
                 tipo_doc: tipoDocSelect.value,
                 nro_doc: tipoDocSelect.value === 'SIN_DOC' ? '0' : nroDocInput.value.trim(),
+                items: items,
+                total_factura: items.reduce((acc, i) => acc + i.subtotal, 0),
                 chat_id: tg.initDataUnsafe?.user?.id || null
             };
 
-            // Enviar datos de vuelta al Bot de Telegram
+            // Enviar datos a Telegram
             tg.sendData(JSON.stringify(formData));
         });
+
+        // Inicialización
+        agregarItem();
     </script>
 </body>
 </html>
